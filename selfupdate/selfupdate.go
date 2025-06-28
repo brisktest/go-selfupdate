@@ -67,16 +67,15 @@ type Updater struct {
 	OnSuccessfulUpdate func() // Optional function to run after an update has successfully taken place
 }
 
-func canUpdate() (err error) {
-	// get the directory the file exists in
-	path, err := os.Executable()
-	if err != nil {
-		return
-	}
+func canUpdate(dir string) (err error) {
+	// // get the directory the file exists in
+	// path, err := os.Executable()
+	// if err != nil {
+	// 	return
+	// }
 
-	fileDir := filepath.Dir(path)
-	fileName := filepath.Base(path)
-
+	fileDir := filepath.Dir(dir)
+	fileName := "test"
 	// attempt to open a file in the file's directory
 	newPath := filepath.Join(fileDir, fmt.Sprintf(".%s.new", fileName))
 	fp, err := os.OpenFile(newPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0755)
@@ -98,7 +97,7 @@ func (u *Updater) BackgroundRun() error {
 	// check to see if we want to check for updates based on version
 	// and last update time
 	if u.WantUpdate() {
-		if err := canUpdate(); err != nil {
+		if err := canUpdate(u.Dir); err != nil {
 			// fail
 			return err
 		}
@@ -149,10 +148,7 @@ func (u *Updater) ClearUpdateState() {
 
 // UpdateAvailable checks if update is available and returns version
 func (u *Updater) UpdateAvailable() (string, error) {
-	path, err := os.Executable()
-	if err != nil {
-		return "", err
-	}
+	path := u.Dir
 	old, err := os.Open(path)
 	if err != nil {
 		return "", err
@@ -172,17 +168,14 @@ func (u *Updater) UpdateAvailable() (string, error) {
 
 // Update initiates the self update process
 func (u *Updater) Update() error {
-	path, err := os.Executable()
-	if err != nil {
-		return err
-	}
+	path := u.Dir
 
 	if resolvedPath, err := filepath.EvalSymlinks(path); err == nil {
 		path = resolvedPath
 	}
 
 	// go fetch latest updates manifest
-	err = u.fetchInfo()
+	err := u.fetchInfo()
 	if err != nil {
 		return err
 	}
@@ -224,7 +217,7 @@ func (u *Updater) Update() error {
 	// it can't be renamed if a handle to the file is still open
 	old.Close()
 
-	err, errRecover := fromStream(bytes.NewBuffer(bin))
+	err, errRecover := fromStream(bytes.NewBuffer(bin), u)
 	if errRecover != nil {
 		return fmt.Errorf("update and recovery errors: %q %q", err, errRecover)
 	}
@@ -240,11 +233,8 @@ func (u *Updater) Update() error {
 	return nil
 }
 
-func fromStream(updateWith io.Reader) (err error, errRecover error) {
-	updatePath, err := os.Executable()
-	if err != nil {
-		return
-	}
+func fromStream(updateWith io.Reader, u *Updater) (err error, errRecover error) {
+	updatePath := u.Dir
 
 	var newBytes []byte
 	newBytes, err = ioutil.ReadAll(updateWith)
