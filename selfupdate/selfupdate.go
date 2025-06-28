@@ -67,12 +67,6 @@ type Updater struct {
 	OnSuccessfulUpdate func() // Optional function to run after an update has successfully taken place
 }
 
-func (u *Updater) getExecRelativeDir(dir string) string {
-	filename, _ := os.Executable()
-	path := filepath.Join(filepath.Dir(filename), dir)
-	return path
-}
-
 func canUpdate() (err error) {
 	// get the directory the file exists in
 	path, err := os.Executable()
@@ -97,7 +91,7 @@ func canUpdate() (err error) {
 
 // BackgroundRun starts the update check and apply cycle.
 func (u *Updater) BackgroundRun() error {
-	if err := os.MkdirAll(u.getExecRelativeDir(u.Dir), 0755); err != nil {
+	if err := os.MkdirAll(u.Dir, 0755); err != nil {
 		// fail
 		return err
 	}
@@ -131,7 +125,7 @@ func (u *Updater) WantUpdate() bool {
 
 // NextUpdate returns the next time update should be checked
 func (u *Updater) NextUpdate() time.Time {
-	path := u.getExecRelativeDir(u.Dir + upcktimePath)
+	path := u.Dir + upcktimePath
 	nextTime := readTime(path)
 
 	return nextTime
@@ -139,7 +133,7 @@ func (u *Updater) NextUpdate() time.Time {
 
 // SetUpdateTime writes the next update time to the state file
 func (u *Updater) SetUpdateTime() bool {
-	path := u.getExecRelativeDir(u.Dir + upcktimePath)
+	path := u.Dir + upcktimePath
 	wait := time.Duration(u.CheckTime) * time.Hour
 	// Add 1 to random time since max is not included
 	waitrand := time.Duration(rand.Intn(u.RandomizeTime+1)) * time.Hour
@@ -149,7 +143,7 @@ func (u *Updater) SetUpdateTime() bool {
 
 // ClearUpdateState writes current time to state file
 func (u *Updater) ClearUpdateState() {
-	path := u.getExecRelativeDir(u.Dir + upcktimePath)
+	path := u.Dir + upcktimePath
 	os.Remove(path)
 }
 
