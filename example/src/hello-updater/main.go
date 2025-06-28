@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/brisktest/go-selfupdate"
+	"github.com/brisktest/go-selfupdate/selfupdate"
 )
 
 // The purpose of this app is to provide a simple example that just prints
